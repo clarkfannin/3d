@@ -188,9 +188,6 @@ const drawFaces = () => {
         // render
         ctx.save();
 
-        ctx.strokeStyle = "blue";
-        ctx.lineWidth = 5;
-
         ctx.beginPath();
         ctx.moveTo(p0.x, p0.y);
         ctx.lineTo(p1.x, p1.y);
@@ -198,7 +195,11 @@ const drawFaces = () => {
         ctx.lineTo(p0.x, p0.y);
         ctx.closePath();
 
-        if (cull([p0, p1, p2])) continue;
+        if (cull([p0, p1, p2])) {
+            ctx.restore();
+            continue;
+        };
+        
         ctx.fillStyle = "white";
         ctx.fill();
 
