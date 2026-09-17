@@ -35,7 +35,7 @@ const wires = [
     [5, 6],
     [6, 7],
     [7, 4],
-]
+];
 
 const triangles = [
     // front
@@ -61,7 +61,7 @@ const triangles = [
     // down
     [4, 5, 0],
     [5, 1, 0],
-]
+];
 
 canvas.width = 400;
 canvas.height = 400;
@@ -80,9 +80,9 @@ const translateZ = ({ x, y, z }, dz) => {
     return applyZ({ x: x, y: y, z: z + dz });
 };
 
-const applyZ = ({x, y, z}) => {
-    return {x: x / z, y: y / z, z: z}
-}
+const applyZ = ({ x, y, z }) => {
+    return { x: x / z, y: y / z, z: z };
+};
 
 const rotateXZ = ({ x, y, z }, angle) => {
     const c = Math.cos(angle);
@@ -136,12 +136,12 @@ const drawWires = () => {
         const endIndex = wire[1]; // 0-8
 
         // get the points at those^ indices
-        const startPoint = points[startIndex]
+        const startPoint = points[startIndex];
         const endPoint = points[endIndex];
 
         // first transform them
-        const rotatedStartPoint = rotateXZ(startPoint, angle)
-        const rotatedEndPoint = rotateXZ(endPoint, angle)
+        const rotatedStartPoint = rotateXZ(startPoint, angle);
+        const rotatedEndPoint = rotateXZ(endPoint, angle);
 
         const translatedStartPoint = translateZ(rotatedStartPoint, dz);
         const translatedEndPoint = translateZ(rotatedEndPoint, dz);
@@ -156,15 +156,19 @@ const drawWires = () => {
         const endY = canvasEndPoint.y;
 
         // render
-        ctx.strokeStyle = "white"
+        ctx.save();
+
+        ctx.strokeStyle = "white";
         ctx.lineWidth = 5;
 
         ctx.beginPath();
         ctx.moveTo(startX, startY);
         ctx.lineTo(endX, endY);
         ctx.stroke();
+
+        ctx.restore();
     }
-}
+};
 
 const drawFaces = () => {
     for (const tri of triangles) {
@@ -182,26 +186,36 @@ const drawFaces = () => {
         const p2 = canvasPoints[2];
 
         // render
-        ctx.strokeStyle = "blue"
+        ctx.save();
+
+        ctx.strokeStyle = "blue";
         ctx.lineWidth = 5;
 
         ctx.beginPath();
         ctx.moveTo(p0.x, p0.y);
         ctx.lineTo(p1.x, p1.y);
-        ctx.stroke();
-        ctx.moveTo(p1.x, p1.y);
         ctx.lineTo(p2.x, p2.y);
-        ctx.stroke();
-        ctx.moveTo(p2.x, p2.y);
         ctx.lineTo(p0.x, p0.y);
-        ctx.stroke();
+        ctx.closePath();
+
+        if (cull([p0, p1, p2])) continue;
+        ctx.fillStyle = "white";
+        ctx.fill();
+
+        ctx.restore();
     }
-}
+};
+
+const cull = (face) => {
+    const a = face[0];
+    const b = face[1];
+    const c = face[2];
+
+    return (b.x - a.x) * (c.y - a.y) - (b.y - a.y) * (c.x - a.x) > 0;
+};
 
 const frame = () => {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
-    drawPoints();
-    drawWires();
     drawFaces();
     requestAnimationFrame(frame);
     angle += 0.1;
