@@ -37,6 +37,32 @@ const wires = [
     [7, 4],
 ]
 
+const triangles = [
+    // front
+    [0, 1, 3],
+    [1, 2, 3],
+
+    // left
+    [4, 0, 7],
+    [0, 3, 7],
+
+    // right
+    [1, 5, 2],
+    [5, 6, 2],
+
+    // back
+    [5, 4, 6],
+    [4, 7, 6],
+
+    // up
+    [3, 2, 7],
+    [2, 6, 7],
+
+    // down
+    [4, 5, 0],
+    [5, 1, 0],
+]
+
 canvas.width = 400;
 canvas.height = 400;
 canvas.style.backgroundColor = BACKGROUND;
@@ -51,8 +77,12 @@ let dz = 1;
 let angle = 0;
 
 const translateZ = ({ x, y, z }, dz) => {
-    return { x: x, y: y, z: z + dz };
+    return applyZ({ x: x, y: y, z: z + dz });
 };
+
+const applyZ = ({x, y, z}) => {
+    return {x: x / z, y: y / z, z: z}
+}
 
 const rotateXZ = ({ x, y, z }, angle) => {
     const c = Math.cos(angle);
@@ -93,8 +123,6 @@ const drawPoints = () => {
         const rotatedPoint = rotateXZ(point, angle);
 
         const zTranslatedPoint = translateZ(rotatedPoint, dz);
-        zTranslatedPoint.x = zTranslatedPoint.x / zTranslatedPoint.z;
-        zTranslatedPoint.y = zTranslatedPoint.y / zTranslatedPoint.z;
 
         const canvasPoint = convertToCanvas(zTranslatedPoint);
 
@@ -118,11 +146,6 @@ const drawWires = () => {
         const translatedStartPoint = translateZ(rotatedStartPoint, dz);
         const translatedEndPoint = translateZ(rotatedEndPoint, dz);
 
-        translatedStartPoint.x /= translatedStartPoint.z;
-        translatedStartPoint.y /= translatedStartPoint.z;
-        translatedEndPoint.x /= translatedEndPoint.z;
-        translatedEndPoint.y /= translatedEndPoint.z;
-
         const canvasStartPoint = convertToCanvas(translatedStartPoint);
         const canvasEndPoint = convertToCanvas(translatedEndPoint);
 
@@ -132,6 +155,7 @@ const drawWires = () => {
         const endX = canvasEndPoint.x;
         const endY = canvasEndPoint.y;
 
+        // render
         ctx.strokeStyle = "white"
         ctx.lineWidth = 5;
 
@@ -142,10 +166,43 @@ const drawWires = () => {
     }
 }
 
+const drawFaces = () => {
+    for (const tri of triangles) {
+        const canvasPoints = [];
+        for (const index of tri) {
+            const point = points[index];
+            const rotated = rotateXZ(point, angle);
+            const translated = translateZ(rotated, dz);
+            const canvasPoint = convertToCanvas(translated);
+            canvasPoints.push(canvasPoint);
+        }
+
+        const p0 = canvasPoints[0];
+        const p1 = canvasPoints[1];
+        const p2 = canvasPoints[2];
+
+        // render
+        ctx.strokeStyle = "blue"
+        ctx.lineWidth = 5;
+
+        ctx.beginPath();
+        ctx.moveTo(p0.x, p0.y);
+        ctx.lineTo(p1.x, p1.y);
+        ctx.stroke();
+        ctx.moveTo(p1.x, p1.y);
+        ctx.lineTo(p2.x, p2.y);
+        ctx.stroke();
+        ctx.moveTo(p2.x, p2.y);
+        ctx.lineTo(p0.x, p0.y);
+        ctx.stroke();
+    }
+}
+
 const frame = () => {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     drawPoints();
     drawWires();
+    drawFaces();
     requestAnimationFrame(frame);
     angle += 0.1;
     dt++;
