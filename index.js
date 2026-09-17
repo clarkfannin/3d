@@ -8,14 +8,34 @@ const points = [
     // front face
     { x: -0.25, y: -0.25, z: 0.25 },
     { x: 0.25, y: -0.25, z: 0.25 },
-    { x: -0.25, y: 0.25, z: 0.25 },
     { x: 0.25, y: 0.25, z: 0.25 },
+    { x: -0.25, y: 0.25, z: 0.25 },
     // back face
     { x: -0.25, y: -0.25, z: -0.25 },
-    { x: -0.25, y: 0.25, z: -0.25 },
     { x: 0.25, y: -0.25, z: -0.25 },
     { x: 0.25, y: 0.25, z: -0.25 },
+    { x: -0.25, y: 0.25, z: -0.25 },
 ];
+
+const wires = [
+    //front face
+    [0, 1],
+    [1, 2],
+    [2, 3],
+    [3, 0],
+
+    // sides
+    [0, 4],
+    [1, 5],
+    [2, 6],
+    [3, 7],
+
+    // back face
+    [4, 5],
+    [5, 6],
+    [6, 7],
+    [7, 4],
+]
 
 canvas.width = 400;
 canvas.height = 400;
@@ -82,14 +102,50 @@ const drawPoints = () => {
     }
 };
 
-const distanceBetween = (pointA, pointB) => {
-    const result = Math.sqrt(Math.abs(Math.pow(pointB.x - pointA.x, 2)) + Math.abs(Math.pow(pointB.y - pointA.y, 2)));
-    return result;
-};
+const drawWires = () => {
+    for (const wire of wires) {
+        const startIndex = wire[0]; // 0-8
+        const endIndex = wire[1]; // 0-8
+
+        // get the points at those^ indices
+        const startPoint = points[startIndex]
+        const endPoint = points[endIndex];
+
+        // first transform them
+        const rotatedStartPoint = rotateXZ(startPoint, angle)
+        const rotatedEndPoint = rotateXZ(endPoint, angle)
+
+        const translatedStartPoint = translateZ(rotatedStartPoint, dz);
+        const translatedEndPoint = translateZ(rotatedEndPoint, dz);
+
+        translatedStartPoint.x /= translatedStartPoint.z;
+        translatedStartPoint.y /= translatedStartPoint.z;
+        translatedEndPoint.x /= translatedEndPoint.z;
+        translatedEndPoint.y /= translatedEndPoint.z;
+
+        const canvasStartPoint = convertToCanvas(translatedStartPoint);
+        const canvasEndPoint = convertToCanvas(translatedEndPoint);
+
+        // then get x and y from them
+        const startX = canvasStartPoint.x;
+        const startY = canvasStartPoint.y;
+        const endX = canvasEndPoint.x;
+        const endY = canvasEndPoint.y;
+
+        ctx.strokeStyle = "white"
+        ctx.lineWidth = 5;
+
+        ctx.beginPath();
+        ctx.moveTo(startX, startY);
+        ctx.lineTo(endX, endY);
+        ctx.stroke();
+    }
+}
 
 const frame = () => {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     drawPoints();
+    drawWires();
     requestAnimationFrame(frame);
     angle += 0.1;
     dt++;
