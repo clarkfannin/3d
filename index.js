@@ -30,6 +30,7 @@ const parseObj = async (path) => {
 	let f = [];
 
 	lines.map((line) => {
+        line = line.trim();
 		if (line.startsWith("s")) {
 			//start
 		} else if (line.startsWith("vn")) {
