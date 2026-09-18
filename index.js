@@ -5,8 +5,23 @@ const BACKGROUND = "black";
 const POINTS = "yellow";
 
 const MODEL = "teapot.obj";
+
+canvas.width = 400;
+canvas.height = 400;
+canvas.style.backgroundColor = BACKGROUND;
+
+ctx.fillStyle = POINTS;
+
+const halfX = canvas.width / 2;
+const halfY = canvas.height / 2;
+
+let dt = 0;
+let dz = 10;
+let angle = 0;
 let points;
 let faces;
+
+
 
 const parseObj = async (path) => {
 	const res = await fetch(path);
@@ -48,21 +63,6 @@ const parseObj = async (path) => {
 	faces = f;
 };
 
-await parseObj(MODEL);
-
-canvas.width = 400;
-canvas.height = 400;
-canvas.style.backgroundColor = BACKGROUND;
-
-ctx.fillStyle = POINTS;
-
-const halfX = canvas.width / 2;
-const halfY = canvas.height / 2;
-
-let dt = 0;
-let dz = 10;
-let angle = 0;
-
 const translateZ = ({ x, y, z }, dz) => {
 	return applyZ({ x: x, y: y, z: z + dz });
 };
@@ -93,11 +93,11 @@ const drawPoints = () => {
 	for (const point of points) {
 		const pointSize = 10;
 
-		const rotatedPoint = rotateXZ(point, angle);
+		const rotated = rotateXZ(point, angle);
 
-		const zTranslatedPoint = translateZ(rotatedPoint, dz);
+		const translated = translateZ(rotated, dz);
 
-		const canvasPoint = convertToCanvas(zTranslatedPoint);
+		const canvasPoint = convertToCanvas(translated);
 
 		ctx.fillRect(canvasPoint.x - pointSize / 2, canvasPoint.y - pointSize / 2, pointSize, pointSize);
 	}
@@ -122,11 +122,15 @@ const drawFaces = () => {
 		// render
 		ctx.save();
 
+        ctx.strokeStyle = "red"
+
 		ctx.beginPath();
 		ctx.moveTo(p0.x, p0.y);
 		ctx.lineTo(p1.x, p1.y);
+        ctx.stroke();
 		ctx.lineTo(p2.x, p2.y);
 		ctx.lineTo(p0.x, p0.y);
+        ctx.stroke()
 		ctx.closePath();
 
 		if (cull([p0, p1, p2])) {
@@ -156,5 +160,7 @@ const frame = () => {
 	angle += 0.1;
 	dt++;
 };
+
+await parseObj(MODEL);
 
 requestAnimationFrame(frame);
