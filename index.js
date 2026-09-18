@@ -21,8 +21,6 @@ let angle = 0;
 let points;
 let faces;
 
-
-
 const parseObj = async (path) => {
 	const res = await fetch(path);
 	const text = await res.text();
