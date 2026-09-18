@@ -119,6 +119,11 @@ const drawFaces = () => {
 		const p1 = canvasPoints[1];
 		const p2 = canvasPoints[2];
 
+        if (cull([p0, p1, p2])) {
+			ctx.restore();
+			continue;
+		}
+
 		// render
 		ctx.save();
 
@@ -132,11 +137,6 @@ const drawFaces = () => {
 		ctx.lineTo(p0.x, p0.y);
         ctx.stroke()
 		ctx.closePath();
-
-		if (cull([p0, p1, p2])) {
-			ctx.restore();
-			continue;
-		}
 
 		ctx.fillStyle = "white";
 		ctx.fill();
