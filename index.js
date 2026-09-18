@@ -4,7 +4,7 @@ const ctx = canvas.getContext("2d");
 const BACKGROUND = "black";
 const POINTS = "yellow";
 
-const MODEL = "teapot.obj";
+const MODEL = "tree.obj";
 
 canvas.width = 400;
 canvas.height = 400;
@@ -16,7 +16,7 @@ const halfX = canvas.width / 2;
 const halfY = canvas.height / 2;
 
 let dt = 0;
-let dz = 10;
+let dz = 3;
 let angle = 0;
 let points;
 let faces;
@@ -52,8 +52,13 @@ const parseObj = async (path) => {
 		const parts = face.split(" ");
 		const result = [];
 		for (let i = 0; i <= 2; i++) {
-			const p = parts[i + 1].split("//");
-			// identical, take the first but who cares. i imagine this is not always the case lol
+            let p;
+            if (face.includes("//")) {
+                p = parts[i + 1].split("//");
+            } else {
+                p = parts[i + 1].split("/")
+            }
+            // take the vertex
 			result[i] = p[0];
 		}
 		return result;
@@ -64,8 +69,9 @@ const parseObj = async (path) => {
 };
 
 const translateZ = ({ x, y, z }, dz) => {
-	return applyZ({ x: x, y: y, z: z + dz });
+	return applyZ({ x: x, y: y - 2, z: z + dz });
 };
+
 
 const applyZ = ({ x, y, z }) => {
 	return { x: x / z, y: y / z, z: z };
