@@ -30,7 +30,7 @@ const parseObj = async (path) => {
 	let f = [];
 
 	lines.map((line) => {
-        line = line.trim();
+		line = line.trim();
 		if (line.startsWith("s")) {
 			//start
 		} else if (line.startsWith("vn")) {
@@ -51,26 +51,25 @@ const parseObj = async (path) => {
 		const parts = face.split(" ");
 		const result = [];
 		for (let i = 0; i <= 2; i++) {
-            let p;
-            if (face.includes("//")) {
-                p = parts[i + 1].split("//");
-            } else {
-                p = parts[i + 1].split("/")
-            }
-            // take the vertex
-			result[i] = p[0];
+			let p;
+			if (face.includes("//")) {
+				p = parts[i + 1].split("//");
+			} else {
+				p = parts[i + 1].split("/");
+			}
+			// take the vertex
+			result[i] = Number(p[0]);
 		}
 		return result;
 	});
 
 	points = v;
-	faces = f;
+	faces = sortFaces(f);
 };
 
 const translateZ = ({ x, y, z }, dz) => {
 	return applyZ({ x: x, y: y - 2, z: z + dz });
 };
-
 
 const applyZ = ({ x, y, z }) => {
 	return { x: x / z, y: y / z, z: z };
@@ -94,7 +93,7 @@ const convertToCanvas = ({ x, y, z }) => {
 	};
 };
 
-const drawPoints = () => {
+const renderPoints = () => {
 	for (const point of points) {
 		const pointSize = 10;
 
@@ -108,7 +107,27 @@ const drawPoints = () => {
 	}
 };
 
-const drawFaces = () => {
+const renderFace = ([p0, p1, p2]) => {
+	ctx.save();
+
+	ctx.strokeStyle = "red";
+
+	ctx.beginPath();
+	ctx.moveTo(p0.x, p0.y);
+	ctx.lineTo(p1.x, p1.y);
+	ctx.stroke();
+	ctx.lineTo(p2.x, p2.y);
+	ctx.lineTo(p0.x, p0.y);
+	ctx.stroke();
+	ctx.closePath();
+
+	ctx.fillStyle = "white";
+	ctx.fill();
+
+	ctx.restore();
+};
+
+const renderFaces = () => {
 	for (const face of faces) {
 		const canvasPoints = [];
 		for (const index of face) {
@@ -124,30 +143,26 @@ const drawFaces = () => {
 		const p1 = canvasPoints[1];
 		const p2 = canvasPoints[2];
 
-        if (cull([p0, p1, p2])) {
+		if (cull([p0, p1, p2])) {
 			ctx.restore();
 			continue;
 		}
 
 		// render
-		ctx.save();
-
-        ctx.strokeStyle = "red"
-
-		ctx.beginPath();
-		ctx.moveTo(p0.x, p0.y);
-		ctx.lineTo(p1.x, p1.y);
-        ctx.stroke();
-		ctx.lineTo(p2.x, p2.y);
-		ctx.lineTo(p0.x, p0.y);
-        ctx.stroke()
-		ctx.closePath();
-
-		ctx.fillStyle = "white";
-		ctx.fill();
-
-		ctx.restore();
+		renderFace([p0, p1, p2]);
 	}
+};
+
+const sortFaces = (faces) => {
+	return faces
+		.map((face) => {
+			face
+				.map((f) => points[f].z)
+				.reduce((acc, curr) => {
+					return (acc + curr) / 3;
+				}, 0);
+		})
+		.sort((a, b) => a - b);
 };
 
 const cull = (face) => {
@@ -160,9 +175,9 @@ const cull = (face) => {
 
 const frame = () => {
 	ctx.clearRect(0, 0, canvas.width, canvas.height);
-	drawFaces();
+	renderFaces();
 	requestAnimationFrame(frame);
-	angle += 0.1;
+	angle += 0.05;
 	dt++;
 };
 
