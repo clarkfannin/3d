@@ -4,7 +4,7 @@ const ctx = canvas.getContext("2d");
 const BACKGROUND = "black";
 const POINTS = "yellow";
 
-const MODEL = "tree.obj";
+const MODEL = "teapot.obj";
 
 canvas.width = 400;
 canvas.height = 400;
@@ -16,169 +16,198 @@ const halfX = canvas.width / 2;
 const halfY = canvas.height / 2;
 
 let dt = 0;
-let dz = 3;
+let dz = 7;
 let angle = 0;
 let points;
-let faces;
+let faces = [];
 
 const parseObj = async (path) => {
-	const res = await fetch(path);
-	const text = await res.text();
-	const lines = text.split("\n");
-	let v = [];
-	const vn = [];
-	let f = [];
+    const res = await fetch(path);
+    const text = await res.text();
+    const lines = text.split("\n");
+    let pointLines = [];
+    let normalLines = [];
+    let faceLines = [];
 
-	lines.map((line) => {
-		line = line.trim();
-		if (line.startsWith("s")) {
-			//start
-		} else if (line.startsWith("vn")) {
-			// normals
-		} else if (line.startsWith("v")) {
-			v.push(line);
-		} else if (line.startsWith("f")) {
-			f.push(line);
-		}
-	});
+    lines.map((line) => {
+        line = line.trim();
+        if (line.startsWith("s")) {
+            //start
+        } else if (line.startsWith("vn")) {
+            // normal vector (x y z)
+            normalLines.push(line);
+        } else if (line.startsWith("vt")) {
+            // texture coordinate (u v)
+        } else if (line.startsWith("v")) {
+            // vertex (x, y, z)
+            pointLines.push(line);
+        } else if (line.startsWith("f")) {
+            // face (v//vt//vn or v/vt/vn), 3 vertices separated by space
+            faceLines.push(line);
+        }
+    });
 
-	v = v.map((point) => {
-		const parts = point.split(" ").map((p) => Number(p));
-		return { x: parts[1], y: parts[2], z: parts[3] };
-	});
+    pointLines = pointLines.map((v) => {
+        const result = v.split(" ").map((point) => Number(point));
+        return { x: result[1], y: result[2], z: result[3] };
+    });
 
-	f = f.map((face) => {
-		const parts = face.split(" ");
-		const result = [];
-		for (let i = 0; i <= 2; i++) {
-			let p;
-			if (face.includes("//")) {
-				p = parts[i + 1].split("//");
-			} else {
-				p = parts[i + 1].split("/");
-			}
-			// take the vertex
-			result[i] = Number(p[0]);
-		}
-		return result;
-	});
+    faceLines = faceLines.map((f) => {
+        const parts = f.split(" ");
+        const result = [];
+        for (let i = 0; i <= 2; i++) {
+            let p;
+            let v;
+            let vt;
+            let vn;
+            if (f.includes("//")) {
+                p = parts[i + 1].split("//");
+                vt = null,
+                vn = Number(p[1]);
+            } else {
+                p = parts[i + 1].split("/");
+                vt = Number(p[1]);
+                vn = Number(p[2]);
+            }
+            v = Number(p[0]);
+            result[i] = { v, vt, vn };
+        }
+        return result;
+    });
 
-	points = v;
-	faces = sortFaces(f);
+    normalLines = normalLines.map((vn) => {
+        const result = vn.split(" ").map((point) => Number(point));
+        return { x: result[1], y: result[2], z: result[3] };
+    });
+
+    points = pointLines;
+
+    faces = sortFaces(faceLines);
 };
 
 const translateZ = ({ x, y, z }, dz) => {
-	return applyZ({ x: x, y: y - 2, z: z + dz });
+    // TODO: handle y position offset based on midpoint of coordinates in obj
+    // for now i just subtract 2 from y
+    return applyZ({ x: x, y: y - 2, z: z + dz });
 };
 
 const applyZ = ({ x, y, z }) => {
-	return { x: x / z, y: y / z, z: z };
+    return { x: x / z, y: y / z, z: z };
 };
 
 const rotateXZ = ({ x, y, z }, angle) => {
-	const c = Math.cos(angle);
-	const s = Math.sin(angle);
-	return {
-		x: x * c - z * s,
-		y,
-		z: x * s + z * c,
-	};
+    const c = Math.cos(angle);
+    const s = Math.sin(angle);
+    return {
+        x: x * c - z * s,
+        y,
+        z: x * s + z * c,
+    };
 };
 
 const convertToCanvas = ({ x, y, z }) => {
-	return {
-		x: halfX + halfX * x,
-		y: halfY - halfY * y,
-		z,
-	};
+    return {
+        x: halfX + halfX * x,
+        y: halfY - halfY * y,
+        z,
+    };
 };
 
 const renderPoints = () => {
-	for (const point of points) {
-		const pointSize = 10;
+    for (const point of points) {
+        const pointSize = 10;
 
-		const rotated = rotateXZ(point, angle);
+        const rotated = rotateXZ(point, angle);
 
-		const translated = translateZ(rotated, dz);
+        const translated = translateZ(rotated, dz);
 
-		const canvasPoint = convertToCanvas(translated);
+        const canvasPoint = convertToCanvas(translated);
 
-		ctx.fillRect(canvasPoint.x - pointSize / 2, canvasPoint.y - pointSize / 2, pointSize, pointSize);
-	}
+        ctx.fillRect(canvasPoint.x - pointSize / 2, canvasPoint.y - pointSize / 2, pointSize, pointSize);
+    }
 };
 
 const renderFace = ([p0, p1, p2]) => {
-	ctx.save();
+    ctx.save();
 
-	ctx.strokeStyle = "red";
+    ctx.strokeStyle = "red";
 
-	ctx.beginPath();
-	ctx.moveTo(p0.x, p0.y);
-	ctx.lineTo(p1.x, p1.y);
-	ctx.stroke();
-	ctx.lineTo(p2.x, p2.y);
-	ctx.lineTo(p0.x, p0.y);
-	ctx.stroke();
-	ctx.closePath();
+    ctx.beginPath();
+    ctx.moveTo(p0.x, p0.y);
+    ctx.lineTo(p1.x, p1.y);
+    ctx.stroke();
+    ctx.lineTo(p2.x, p2.y);
+    ctx.lineTo(p0.x, p0.y);
+    ctx.stroke();
+    ctx.closePath();
 
-	ctx.fillStyle = "white";
-	ctx.fill();
+    ctx.fillStyle = "white";
+    ctx.fill();
 
-	ctx.restore();
+    ctx.restore();
 };
 
 const renderFaces = () => {
-	for (const face of faces) {
-		const canvasPoints = [];
-		for (const index of face) {
-			if (isNaN(index)) continue;
-			const point = points[index - 1];
-			const rotated = rotateXZ(point, angle);
-			const translated = translateZ(rotated, dz);
-			const canvasPoint = convertToCanvas(translated);
-			canvasPoints.push(canvasPoint);
-		}
+    for (const face of faces) {
+        const canvasPoints = [];
+        for (const f of face) {
+            if (isNaN(f.v)) continue;
+            const point = points[f.v - 1];
+            const rotated = rotateXZ(point, angle);
+            const translated = translateZ(rotated, dz);
+            const canvasPoint = convertToCanvas(translated);
+            canvasPoints.push(canvasPoint);
+        }
 
-		const p0 = canvasPoints[0];
-		const p1 = canvasPoints[1];
-		const p2 = canvasPoints[2];
+        const p0 = canvasPoints[0];
+        const p1 = canvasPoints[1];
+        const p2 = canvasPoints[2];
 
-		if (cull([p0, p1, p2])) {
-			ctx.restore();
-			continue;
-		}
+        if (cull([p0, p1, p2])) {
+            ctx.restore();
+            continue;
+        }
 
-		// render
-		renderFace([p0, p1, p2]);
-	}
+        // render
+        renderFace([p0, p1, p2]);
+    }
 };
 
 const sortFaces = (faces) => {
-	return faces
-		.map((face) => {
-			face
-				.map((f) => points[f].z)
-				.reduce((acc, curr) => {
-					return (acc + curr) / 3;
-				}, 0);
-		})
-		.sort((a, b) => a - b);
+    // every frame we need to sort faces
+    // faces is an array of arrays of 3 indices to the points array
+
+    const zSums = faces.map((face) => {
+        // each p is a an array of 3 points
+        // reduce each to a single summed z value
+        return face.reduce((sum, f) => sum + translateZ(rotateXZ(points[f.v - 1], angle), dz).z, 0);
+    });
+
+    return (
+        faces
+            // copy of faces where each element is now an array of its 3 points
+            .map((value, index) => ({ value, index }))
+            // we need to compare the summed z for each 3-point array in ps
+            .sort((a, b) => zSums[b.index] - zSums[a.index])
+            .map(({ value }) => value)
+    );
 };
 
 const cull = (face) => {
-	const a = face[0];
-	const b = face[1];
-	const c = face[2];
+    const a = face[0];
+    const b = face[1];
+    const c = face[2];
 
-	return (b.x - a.x) * (c.y - a.y) - (b.y - a.y) * (c.x - a.x) > 0;
+    return (b.x - a.x) * (c.y - a.y) - (b.y - a.y) * (c.x - a.x) > 0;
 };
 
 const frame = () => {
-	ctx.clearRect(0, 0, canvas.width, canvas.height);
-	renderFaces();
-	requestAnimationFrame(frame);
-	angle += 0.05;
-	dt++;
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    faces = sortFaces(faces);
+    renderFaces();
+    requestAnimationFrame(frame);
+    angle += 0.05;
+    dt++;
 };
 
 await parseObj(MODEL);
