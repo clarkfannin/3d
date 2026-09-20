@@ -1,4 +1,4 @@
-export default function renderFace (ctx, [p0, p1, p2]) {
+export default function drawFace (ctx, [p0, p1, p2]) {
     ctx.save();
 
     ctx.strokeStyle = "red";

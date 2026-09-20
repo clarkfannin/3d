@@ -1,0 +1,1 @@
+export const config = {dt: 0, dz: 7, angle: 0}
