@@ -2,7 +2,6 @@ import parseObj from "./parsers/obj.js";
 import { translateZ, rotateXZ, convertToCanvas } from "./transformations.js";
 import cull from "./culling.js";
 import renderFace from "./rendering/render-face.js";
-import quicksortFaces from "./rendering/quicksort-faces.js"
 import getBoundingBox from "./rendering/bounding-box.js";
 
 const canvas = document.getElementById("canvas");
