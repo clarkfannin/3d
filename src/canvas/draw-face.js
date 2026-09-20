@@ -17,3 +17,14 @@ export default function drawFace (ctx, [p0, p1, p2]) {
 
     ctx.restore();
 };
+
+export function drawPixel(ctx, {x, y, z}){
+    const imageData = ctx.getImageData(x, y, 1, 1);
+    const data = imageData.data;
+
+    console.log(data)
+}
+
+export function drawLine(ctx, startPoint, endPoint) {
+    ctx.
+}

@@ -1,9 +1,9 @@
 import { config } from "./config.js";
 import parseObj from "./parsers/obj.js";
-import { translateZ, rotateXZ, convertToCanvas } from "./transformations.js";
+import { translateZ, rotateXZ, convertToCanvas } from "./rendering/transformations.js";
 import cull from "./rendering/culling.js";
 import sortFaces from "./rendering/sort-faces.js";
-import renderFace from "./canvas/draw-face.js";
+import drawFace from "./canvas/draw-face.js";
 import getBoundingBox from "./rendering/bounding-box.js";
 
 const canvas = document.getElementById("canvas");
@@ -23,7 +23,7 @@ ctx.fillStyle = POINTS;
 const halfX = canvas.width / 2;
 const halfY = canvas.height / 2;
 
-const data = {points: [], faces: []}
+const data = { points: [], faces: [] };
 
 export function drawFaces() {
     for (const face of data.faces) {
@@ -46,7 +46,7 @@ export function drawFaces() {
             continue;
         }
 
-        renderFace(ctx, canvasPoints);
+        drawFace(ctx, canvasPoints);
     }
 }
 
