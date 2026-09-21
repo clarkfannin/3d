@@ -2,6 +2,7 @@ export default function parseObj(text) {
     const lines = text.split("\n");
     let pointLines = [];
     let normalLines = [];
+    let textureLines = [];
     let faceLines = [];
 
     lines.map((line) => {
@@ -13,6 +14,7 @@ export default function parseObj(text) {
             normalLines.push(line);
         } else if (line.startsWith("vt")) {
             // texture coordinate (u v)
+            textureLines.push(line)
         } else if (line.startsWith("v")) {
             // vertex (x, y, z)
             pointLines.push(line);
@@ -50,12 +52,18 @@ export default function parseObj(text) {
     });
 
     normalLines = normalLines.map((vn) => {
-        const result = vn.split(" ").map((point) => Number(point));
-        return { x: result[1], y: result[2], z: result[3] };
+        const result = vn.split(" ")
+        return { x: Number(result[1]), y: Number(result[2]), z: Number(result[3]) };
     });
+
+    textureLines = textureLines.map((vt) => {
+        const result = vt.split(" ")
+        return {u: Number(result[1]), v: Number(result[2])}
+    })
 
     const points = pointLines;
     const faces = faceLines;
+    const uvs = textureLines;
 
-    return { points, faces };
+    return { points, faces, uvs };
 };

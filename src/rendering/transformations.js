@@ -1,7 +1,5 @@
 export function translateZ({ x, y, z }, dz) {
-    // TODO: handle y position offset based on midpoint of coordinates in obj
-    // for now i just subtract 2 from y
-    return applyZ({ x: x, y: y - 2, z: z + dz });
+    return applyZ({ x, y, z: z + dz });
 }
 
 export function applyZ({ x, y, z }) {

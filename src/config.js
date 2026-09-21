@@ -2,7 +2,7 @@ export const config = {
     width: 320,
     height: 240,
     dt: 0,
-    dz: 5,
+    dz: 7,
     angle: 0,
     colors: {
         background: "black",
