@@ -7,11 +7,11 @@ export function pointInTriangle(x, y, [v0, v1, v2]) {
     return edge({ x, y }, v0, v1) >= 0 && edge({ x, y }, v1, v2) >= 0 && edge({ x, y }, v2, v0) >= 0;
 }
 
-const dist = (v0, v1) => {
+export function dist (v0, v1) {
     return Math.sqrt(Math.pow(v1.x - v0.x, 2) + Math.pow(v1.y - v0.y, 2));
 };
 
-const area = (s, edge0, edge1, edge2) => {
+export function area (s, edge0, edge1, edge2) {
     return Math.sqrt(s * (s - edge0) * (s - edge1) * (s - edge2));
 };
 
