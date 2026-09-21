@@ -1,8 +1,10 @@
 export const config = {
+    model: "models/truck.obj",
+    texture: "models/truck.png",
     width: 320,
     height: 240,
     dt: 0,
-    dz: .8,
+    dz: 0.8,
     angle: 0,
     colors: {
         background: "black",
