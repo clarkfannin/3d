@@ -2,6 +2,7 @@ import getTextureImageData from "./canvas/load-texture.js";
 
 export const state = {
     sceneImageData: null,
+    keys: new Set(),
     models: [
         {
             path: "models/rat.obj",
@@ -110,5 +111,5 @@ export const state = {
             textureImageData: await getTextureImageData("models/rat.png"),
         },
     ],
-    camera: { x: 0, y: 0, z: -0.5, yaw: 0, pitch: 0, roll: 0 },
+    camera: { x: 0, y: 0, z: -0.5, yaw: 0, pitch: 0, roll: 0, forward: 0, right: 0, up: 0 },
 };

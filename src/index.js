@@ -7,6 +7,7 @@ import getBoundingBox from "./rendering/bounding-box.js";
 import { pointInTriangle, barycentric, interpolate } from "./rendering/rasterizer.js";
 import { state } from "./state.js";
 import { placePixel, convertPixel } from "./canvas/drawing.js";
+import setupInput, { handlePlayerActions } from "./input/input.js";
 
 const canvas = document.getElementById("canvas");
 const ctx = canvas.getContext("2d", { willReadFrequently: true });
@@ -74,6 +75,7 @@ export function drawFaces(model) {
 }
 
 const frame = () => {
+    handlePlayerActions(state);
     state.sceneImageData.data.fill(0);
     for (let i = 0; i < state.models.length; i++) {
         state.models[i].faces = sortFaces(state.models[i]);
@@ -91,4 +93,5 @@ for (const model of state.models) {
 }
 state.sceneImageData = ctx.getImageData(0, 0, config.width, config.height);
 
+setupInput(state);
 requestAnimationFrame(frame);
