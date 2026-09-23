@@ -1,6 +1,6 @@
 import { config } from "./config.js";
 import parseObj from "./parsers/obj.js";
-import { vertexPipeline } from "./rendering/transformations.js";
+import { vertexPipeline, lerp } from "./rendering/transformations.js";
 import cull from "./rendering/culling.js";
 import sortFaces from "./rendering/sort-faces.js";
 import getBoundingBox from "./rendering/bounding-box.js";
@@ -21,27 +21,25 @@ canvas.halfWidth = canvas.width / 2;
 canvas.halfHeight = canvas.height / 2;
 canvas.scale = canvas.halfHeight;
 
-const data = { points: [], faces: [], uvs: [] };
-
 export function getPixelColor([u, v]) {
     const i = (u * state.textureImageData.width + v) * 4;
     const data = state.textureImageData.imageData.data;
     return [data[i], data[i + 1], data[i + 2], data[i + 3]];
 }
 
-export function drawFaces() {
-    for (const face of data.faces) {
+export function drawFaces(model) {
+    for (const face of model.faces) {
         const canvasPoints = [];
 
         // transform points in face to canvas space
         for (const f of face) {
             if (isNaN(f.v)) continue;
-            const point = data.points[f.v - 1];
-            const canvasPoint = vertexPipeline(point, state.model, state.camera, canvas);
+            const point = model.points[f.v - 1];
+            const canvasPoint = vertexPipeline(point, model, state.camera, canvas);
 
             if (canvasPoint) {
-                canvasPoint.u = data.uvs[f.vt - 1].u;
-                canvasPoint.v = data.uvs[f.vt - 1].v;
+                canvasPoint.u = model.uvs[f.vt - 1].u;
+                canvasPoint.v = model.uvs[f.vt - 1].v;
             }
 
             canvasPoints.push(canvasPoint);
@@ -61,10 +59,10 @@ export function drawFaces() {
                 const u = interpolate(weights, canvasPoints[0].u, canvasPoints[1].u, canvasPoints[2].u);
                 const v = interpolate(weights, canvasPoints[0].v, canvasPoints[1].v, canvasPoints[2].v);
 
-                const tX = Math.floor(u * (state.textureImageData.width - 1));
-                const tY = Math.floor((1 - v) * (state.textureImageData.height - 1));
+                const tX = Math.floor(u * (model.textureImageData.width - 1));
+                const tY = Math.floor((1 - v) * (model.textureImageData.height - 1));
 
-                const color = convertPixel(state.textureImageData.imageData, state.textureImageData.width, tX, tY);
+                const color = convertPixel(model.textureImageData.imageData, model.textureImageData.width, tX, tY);
 
                 // pixel: the current x and y being iterated
                 if (pointInTriangle(x, y, canvasPoints)) {
@@ -77,16 +75,20 @@ export function drawFaces() {
 
 const frame = () => {
     state.sceneImageData.data.fill(0);
-    data.faces = sortFaces(data, state.model, data.faces);
-    drawFaces();
+    for (let i = 0; i < state.models.length; i++) {
+        state.models[i].faces = sortFaces(state.models[i]);
+        drawFaces(state.models[i]);
+    }
     ctx.putImageData(state.sceneImageData, 0, 0);
     requestAnimationFrame(frame);
-    state.model.yaw += 0.05;
+
     state.sceneImageData = ctx.getImageData(0, 0, config.width, config.height);
 };
 
-const res = await fetch(config.model);
-({ points: data.points, faces: data.faces, uvs: data.uvs } = parseObj(await res.text()));
+for (const model of state.models) {
+    const res = await fetch(model.path);
+    Object.assign(model, parseObj(await res.text()));
+}
 state.sceneImageData = ctx.getImageData(0, 0, config.width, config.height);
 
 requestAnimationFrame(frame);

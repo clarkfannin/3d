@@ -4,6 +4,14 @@ export function translate(p, offset) {
     return { x: p.x + offset.dx, y: p.y + offset.dy, z: p.z + offset.dz };
 }
 
+export function scale(p, s) {
+    return {x: p.x * s, y: p.y * s, z: p.z * s}
+}
+
+export function lerp(a, b, t) {
+    return a * (1 - t) + b * t;
+}
+
 // at one of these stages i need to check against the near plane.
 // if the plane is defined as z=0 and the positive direction is away from the screen,
 // then points with a negative z should be set to null.
@@ -30,15 +38,16 @@ export function rotateYZ(p, angle) {
 }
 
 export function modelToWorld(p, model) {
-    let result = rotateYZ(p, model.pitch);
-    result = rotateXZ(result, model.yaw)
+    let result = scale(p, model.scale);
+    rotateYZ(result, model.pitch);
+    result = rotateXZ(result, model.yaw);
     // offset result based on the model's displacement vector from origin
     return translate(result, { dx: model.x, dy: model.y, dz: model.z });
 }
 
 export function worldToCamera(world, camera) {
     // inverse of the camera
-    let result = translate(world, {dx: -camera.x, dy: -camera.y, dz: -camera.z})
+    let result = translate(world, { dx: -camera.x, dy: -camera.y, dz: -camera.z });
     result = rotateXZ(result, -camera.yaw);
     result = rotateYZ(result, -camera.pitch);
     return result;
@@ -61,7 +70,7 @@ export function ndcToScreen(p, halfWidth, halfHeight, scale) {
 }
 
 export function vertexPipeline(point, model, camera, viewport) {
-    const world = modelToWorld(point, model, camera);
+    const world = modelToWorld(point, model);
     const view = worldToCamera(world, camera);
     if (view.z <= config.near) return null;
     const clip = cameraToClip(view);
