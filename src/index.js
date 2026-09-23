@@ -82,8 +82,6 @@ const frame = () => {
     ctx.putImageData(state.sceneImageData, 0, 0);
     requestAnimationFrame(frame);
     state.model.yaw += 0.05;
-    state.camera.z -= 0.005;
-    state.camera.x -= 0.005;
     state.sceneImageData = ctx.getImageData(0, 0, config.width, config.height);
 };
 

@@ -13,6 +13,7 @@ export function convertPixel(imageData, width, x, y) {
 
 export function placePixel(x, y, [r, g, b, a]) {
     // index in the global pixel buffer, [r, g, b, a, r, g, b, a...]
+    //if (x < 0 || x > config.width || y < 0 || y > config.height) return;
     const index = (y * config.width + x) * 4;
     state.sceneImageData.data[index] = r;
     state.sceneImageData.data[index + 1] = g;
