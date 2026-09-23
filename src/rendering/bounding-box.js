@@ -1,3 +1,5 @@
+import { config } from "../config.js";
+
 export default function getBoundingBox(facePoints) {
     let xMin = Infinity;
     let xMax = -Infinity;
@@ -9,5 +11,5 @@ export default function getBoundingBox(facePoints) {
         if (point.y < yMin) yMin = Math.floor(point.y);
         if (point.y > yMax) yMax = Math.ceil(point.y);
     }
-    return { xMin, xMax, yMin, yMax };
-};
+    return { xMin: Math.max(0, xMin), xMax: Math.min(config.width, xMax), yMin: Math.max(0, yMin), yMax: Math.min(config.height, yMax) };
+}

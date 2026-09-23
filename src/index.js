@@ -48,6 +48,7 @@ export function drawFaces() {
         }
 
         // backface culling
+        if (canvasPoints.some((v) => v === null)) continue;
         if (cull(canvasPoints)) continue;
 
         // get bounding box to iterate over and check if pixel is in triangle
@@ -81,6 +82,8 @@ const frame = () => {
     ctx.putImageData(state.sceneImageData, 0, 0);
     requestAnimationFrame(frame);
     state.model.yaw += 0.05;
+    state.camera.z -= 0.005;
+    state.camera.x -= 0.005;
     state.sceneImageData = ctx.getImageData(0, 0, config.width, config.height);
 };
 
