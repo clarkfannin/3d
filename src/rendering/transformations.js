@@ -12,11 +12,6 @@ export function lerp(a, b, t) {
     return a * (1 - t) + b * t;
 }
 
-// at one of these stages i need to check against the near plane.
-// if the plane is defined as z=0 and the positive direction is away from the screen,
-// then points with a negative z should be set to null.
-// in canvasPoints if the array contains a point with negative z it will be skipped
-
 export function rotateXZ(p, angle) {
     const c = Math.cos(angle);
     const s = Math.sin(angle);
@@ -45,7 +40,7 @@ export function modelToWorld(p, model) {
     return translate(result, { dx: model.x, dy: model.y, dz: model.z });
 }
 
-export function worldToCamera(world, camera) {
+export function worldToCamera(world, camera, model) {
     // inverse of the camera
     let result = translate(world, { dx: -camera.x, dy: -camera.y, dz: -camera.z });
     result = rotateXZ(result, -camera.yaw);
@@ -69,11 +64,17 @@ export function ndcToScreen(p, halfWidth, halfHeight, scale) {
     };
 }
 
-export function vertexPipeline(point, model, camera, viewport) {
+export function vertexPipeline(point, model, mesh, camera, viewport) {
     const world = modelToWorld(point, model);
-    const view = worldToCamera(world, camera);
+    const view = worldToCamera(world, camera, model);
     if (view.z <= config.near) return null;
     const clip = cameraToClip(view);
     const ndc = clipToNdc(clip);
     return ndcToScreen(ndc, viewport.halfWidth, viewport.halfHeight, viewport.scale);
+}
+
+export function getMeshDepth(point, model, mesh, camera) {
+    const world = modelToWorld(point, model);
+    const view = worldToCamera(world, camera, model);
+    return 
 }

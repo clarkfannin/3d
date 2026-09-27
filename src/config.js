@@ -3,12 +3,15 @@ export const config = {
     height: 240,
     dt: 1,
     near: .000000001,
-    moveSpeed: 0.02,
+    moveSpeed: 0.005,
+    turnSpeed: 0.05,
     keyBindings: {
         forward: "w",
         backward: "s",
         left: "a",
         right: "d",
+        up: "q",
+        down: "e",
     },
     colors: {
         background: "black",
