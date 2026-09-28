@@ -1,15 +1,14 @@
 import { config } from "./config.js";
 import parseObj from "./parsers/obj-v2.js";
-import { vertexPipeline, lerp } from "./rendering/transformations.js";
+import { convertCameraToScreenSpace, convertModelToCameraSpace, clipNear, lerp } from "./rendering/transformations.js";
 import cull from "./rendering/culling.js";
-import sortFaces from "./rendering/sort-faces.js";
 import getBoundingBox from "./rendering/bounding-box.js";
-import { pointInTriangle, barycentric, interpolate, edge } from "./rendering/rasterizer.js";
+import { pointInTriangle, interpolate, edge } from "./rendering/rasterizer.js";
 import { state } from "./state.js";
 import { placePixel, convertPixel } from "./canvas/drawing.js";
 import setupInput, { handlePlayerActions } from "./input/input.js";
 import parseMtl from "./parsers/mtl.js";
-import getTextureImageData from "./canvas/load-texture.js";
+import getTextureImageData, { loadBgImage } from "./canvas/load-texture.js";
 
 const canvas = document.getElementById("canvas");
 const ctx = canvas.getContext("2d", { willReadFrequently: true });
@@ -34,16 +33,27 @@ export function renderPixels(mesh, boundingBox, canvasPoints) {
             const e1 = edge(p, canvasPoints[2], canvasPoints[0]);
             const e2 = edge(p, canvasPoints[0], canvasPoints[1]);
             if (!pointInTriangle(e0, e1, e2)) continue;
+
             const sum = e0 + e1 + e2;
 
             const weights = { w0: e0 / sum, w1: e1 / sum, w2: e2 / sum };
             const u = interpolate(weights, canvasPoints[0].u, canvasPoints[1].u, canvasPoints[2].u);
             const v = interpolate(weights, canvasPoints[0].v, canvasPoints[1].v, canvasPoints[2].v);
+            const depth = interpolate(weights, canvasPoints[0].z, canvasPoints[1].z, canvasPoints[2].z);
 
             const tX = Math.floor(frac(u) * (mesh.textureImageData?.width - 1));
             const tY = Math.floor((1 - frac(v)) * (mesh.textureImageData?.height - 1));
 
             const color = convertPixel(mesh.textureImageData?.imageData, mesh.textureImageData?.width, tX, tY);
+            if (
+                (!state.zBuffer[y][x] || isNaN(state.zBuffer[y][x]) || depth < state.zBuffer[y][x]) &&
+                // skip storing transparent pixels in the zBuffer
+                color[3] !== 0
+            ) {
+                // if the current pixel about to be rendered is closer than another one at the same coord, update the zbuffer
+
+                state.zBuffer[y][x] = depth;
+            } else continue; // skip if it's further
 
             // pixel: the current x and y being iterated
             if (color) {
@@ -55,63 +65,54 @@ export function renderPixels(mesh, boundingBox, canvasPoints) {
 
 export function drawFaces(model, mesh) {
     for (const face of mesh.faces) {
-        const canvasPoints = [];
+        const cameraPoints = [];
 
-        // transform points in face to canvas space
+        // transform points in face to camera space
         for (const f of face) {
             // v = vertices index from obj
             if (isNaN(f.v)) continue;
             const point = model.points[f.v - 1];
-            const canvasPoint = vertexPipeline(point, model, mesh, state.camera, canvas);
-
-            if (canvasPoint) {
-                canvasPoint.u = model.uvs[f.vt - 1]?.u;
-                canvasPoint.v = model.uvs[f.vt - 1]?.v;
-            }
-
-            canvasPoints.push(canvasPoint);
+            point.u = model.uvs[f.vt - 1]?.u;
+            point.v = model.uvs[f.vt - 1]?.v;
+            const cameraPoint = convertModelToCameraSpace(point, model, mesh, state.camera);
+            cameraPoints.push(cameraPoint);
         }
 
-        // backface culling
-        if (canvasPoints.some((v) => v === null)) continue;
-        if (cull(canvasPoints)) continue;
+        // near plane clipping
+        const clipped = clipNear(cameraPoints, config.near);
+        if (clipped.length < 3) continue;
 
-        // get bounding box to iterate over and check if pixel is in triangle
-        const boundingBox = getBoundingBox(canvasPoints);
+        const canvasPoints = clipped.map((p) => convertCameraToScreenSpace(p, canvas));
 
-        // render pixels
-        renderPixels(mesh, boundingBox, canvasPoints);
+        // walk through canvasPoints to construct triangles
+        // use 0 as the 'pivot' vertex
+        for (let i = 1; i < canvasPoints.length - 1; i++) {
+            const tri = [canvasPoints[0], canvasPoints[i], canvasPoints[i + 1]];
+
+            // backface culling
+            if (cull(tri)) continue;
+
+            // get bounding box to iterate over and check if pixel is in triangle
+            const boundingBox = getBoundingBox(tri);
+
+            // render pixels
+            renderPixels(mesh, boundingBox, tri);
+        }
     }
 }
 
-export function sortModels(models) {
-    return models.flat().sort((a, b) => b.screenZSum - a.screenZSum);
-}
-
-export function sortMeshes(model) {
-    model.meshes = model.meshes.flat().sort((a, b) => {
-        if (a.texture === "Floor") return -1;
-        if (b.texture === "Floor") return 1;
-        return b.screenZSum - a.screenZSum;
-    });
-}
+state.bgImageData = await loadBgImage(config.bgImage);
 
 let last = performance.now();
 const frame = (now) => {
     const dt = (now - last) / 1000;
     last = now;
-    state.time++;
+    state.time += dt;
     handlePlayerActions(state, dt);
-    state.sceneImageData.data.fill(0);
-    state.models = sortModels(state.models);
+    ((state.zBuffer = Array.from({ length: 240 }, () => Array(320).fill(null))), state.sceneImageData.data.set(state.bgImageData.imageData.data));
     for (const model of state.models) {
-        model.screenZSum = 0;
-        sortMeshes(model);
         for (const mesh of model.meshes) {
-            mesh.screenZSum = 0;
-            mesh.faces = sortFaces(model, mesh, state.camera);
-            
-            if (mesh.texture === "Green_Elka") {
+            if (mesh.texture === "Green_Elka" || mesh.texture === "Green_sosna.001") {
                 mesh.x = mesh.startX + Math.sin(state.time * mesh.branchOffset) / 200;
             }
             drawFaces(model, mesh);
@@ -119,20 +120,52 @@ const frame = (now) => {
     }
     ctx.putImageData(state.sceneImageData, 0, 0);
     requestAnimationFrame(frame);
-
-    state.sceneImageData = ctx.getImageData(0, 0, config.width, config.height);
 };
 
+export async function openDB() {
+    const request = indexedDB.open("models", 1);
+    request.onupgradeneeded = () => request.result.createObjectStore("models", { keyPath: "path" });
+    return promisify(request);
+}
+
+const store = (db, mode) => db.transaction("models", mode).objectStore("models");
+
+export function promisify(request) {
+    return new Promise((resolve, reject) => {
+        request.onsuccess = () => resolve(request.result);
+        request.onerror = () => reject(request.result);
+    });
+}
+
+export async function getCachedModel(db, modelPath, modelText) {
+    let s;
+    s = store(db, "readonly");
+    const getReq = s.get(modelPath);
+    const getRes = await promisify(getReq);
+    if (!getRes) {
+        s = store(db, "readwrite");
+        const modelObject = parseObj(modelText);
+        await s.put({ path: modelPath, modelObject });
+        return modelObject;
+    }
+
+    return getRes.modelObject;
+}
+
+const db = await openDB();
 for (let model of state.models) {
-    model.screenZSum = 0;
     const modelRes = await fetch(model.path);
     const mtlRes = await fetch(model.materialPath);
-    Object.assign(model, parseObj(await modelRes.text()));
-    model.mtlMap = parseMtl(await mtlRes.text());
+    const modelText = await modelRes.text();
+    const mtlText = await mtlRes.text();
+    const modelObject = await getCachedModel(db, model.path, modelText);
+    console.log(modelObject);
+    Object.assign(model, modelObject);
+    console.log(model)
+    model.mtlMap = parseMtl(mtlText);
     for (const mesh of model.meshes) {
-        mesh.screenZSum = 0;
         mesh.startX = mesh.x;
-        mesh.branchOffset = Math.random()/5
+        mesh.branchOffset = Math.random();
         mesh.textureImageData = await getTextureImageData(model, mesh);
     }
 }
@@ -141,3 +174,7 @@ state.sceneImageData = ctx.getImageData(0, 0, config.width, config.height);
 
 setupInput(state);
 requestAnimationFrame(frame);
+
+window.gs = () => {
+    console.log(state)
+}

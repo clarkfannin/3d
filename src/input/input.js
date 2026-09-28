@@ -31,7 +31,7 @@ export function handlePlayerActions(state, dt) {
     }
 
     if (state.keys.has(config.keyBindings.down)) {
-        if (camera.y > 0) camera.y -= moveSpeed * dt;
+        /*if (camera.y > 0)*/ camera.y -= moveSpeed * dt;
     }
 }
 

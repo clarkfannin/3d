@@ -1,16 +1,18 @@
 import getTextureImageData from "./canvas/load-texture.js";
 
 export const state = {
+    zBuffer: Array.from({ length: 240 }, () => Array(320).fill(null)),
     time: 0,
     sceneImageData: null,
+    bgImageData: null,
     keys: new Set(),
     models: [
         {
             path: "models/forest.obj",
             materialPath: "models/forest.mtl",
-            x: 0,
+            x: .4,
             y: .45,
-            z: 0,
+            z: .3,
             yaw: 0,
             pitch: 0,
             roll: 0,
@@ -18,7 +20,20 @@ export const state = {
             points: [],
             uvs: [],
             meshes: [],
-            screenZSum: 0,
+        },
+        {
+            path: "models/chest.obj",
+            materialPath: "models/chest.mtl",
+            x: 1.09,
+            y: -.1,
+            z: -0.55,
+            yaw: 0,
+            pitch: 0,
+            roll: 0,
+            scale: .05,
+            points: [],
+            uvs: [],
+            meshes: [],
         },
     ],
     camera: { x: 0, y: 0, z: 0, yaw: 0, pitch: 0, roll: 0, forward: 0, right: 0, up: 0 },

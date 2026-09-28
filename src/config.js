@@ -18,4 +18,5 @@ export const config = {
         faces: "white",
         points: "blue",
     },
+    bgImage: "images/sunset.jpg"
 };
