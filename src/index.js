@@ -161,7 +161,7 @@ for (let model of state.models) {
     const modelObject = await getCachedModel(db, model.path, modelText);
     console.log(modelObject);
     Object.assign(model, modelObject);
-    console.log(model)
+    console.log(model);
     model.mtlMap = parseMtl(mtlText);
     for (const mesh of model.meshes) {
         mesh.startX = mesh.x;
@@ -176,5 +176,5 @@ setupInput(state);
 requestAnimationFrame(frame);
 
 window.gs = () => {
-    console.log(state)
-}
+    console.log(state);
+};
