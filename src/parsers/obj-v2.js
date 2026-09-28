@@ -58,8 +58,8 @@ export default function parseObj(text) {
 			return { u: Number(result[1]), v: Number(result[2]) };
 		});
 
-		points.push(...pointLines);
-		uvs.push(...uvLines);
+        for (const p of pointLines) points.push(p)
+        for (const u of uvLines) uvs.push(u)
 
 		const faces = faceLines;
 		if (faces.length === 0) continue;
@@ -70,8 +70,13 @@ export default function parseObj(text) {
 		return p.y;
 	});
 
-	const yMin = Math.min(...yVals);
-	const yMax = Math.max(...yVals);
+    let yMin = Infinity;
+    let yMax = -Infinity;
+    for (const y of yVals) {
+        if (y < yMin) yMin = y;
+        if (y > yMax) yMax = y;
+    }
+    console.log(yMin, yMax)
 	const yCenter = (yMax + yMin) / 2;
 	for (const p of points) {
 		p.y -= yCenter;

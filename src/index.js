@@ -40,8 +40,8 @@ export function drawFaces(model, mesh) {
 			const canvasPoint = vertexPipeline(point, model, mesh, state.camera, canvas);
 
 			if (canvasPoint) {
-				canvasPoint.u = model.uvs[f.vt - 1].u;
-				canvasPoint.v = model.uvs[f.vt - 1].v;
+				canvasPoint.u = model.uvs[f.vt - 1]?.u;
+				canvasPoint.v = model.uvs[f.vt - 1]?.v;
 			}
 
 			canvasPoints.push(canvasPoint);
@@ -61,13 +61,13 @@ export function drawFaces(model, mesh) {
 				const u = interpolate(weights, canvasPoints[0].u, canvasPoints[1].u, canvasPoints[2].u);
 				const v = interpolate(weights, canvasPoints[0].v, canvasPoints[1].v, canvasPoints[2].v);
 
-				const tX = Math.floor(frac(u) * (mesh.textureImageData.width - 1));
-				const tY = Math.floor((1 - frac(v)) * (mesh.textureImageData.height - 1));
+				const tX = Math.floor(frac(u) * (mesh.textureImageData?.width - 1));
+				const tY = Math.floor((1 - frac(v)) * (mesh.textureImageData?.height - 1));
 
-				const color = convertPixel(mesh.textureImageData.imageData, mesh.textureImageData.width, tX, tY);
+				const color = convertPixel(mesh.textureImageData?.imageData, mesh.textureImageData?.width, tX, tY);
 
 				// pixel: the current x and y being iterated
-				if (pointInTriangle(x, y, canvasPoints)) {
+				if (pointInTriangle(x, y, canvasPoints) && color) {
 					placePixel(x, y, color);
 					drawn++;
 				}

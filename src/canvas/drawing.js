@@ -2,6 +2,7 @@ import { state } from "../state.js";
 import { config } from "../config.js";
 
 export function convertPixel(imageData, width, x, y) {
+    if (!imageData) return;
     const i = (y * width + x) * 4;
     const r = imageData.data[i];
     const g = imageData.data[i + 1];

@@ -6,10 +6,10 @@ export default function parseMtl(text) {
 	const objects = text.split(/^newmtl /gm).filter((l) => l !== "");
 	for (let i = 0; i < objects.length; i++) {
 		const lines = objects[i].split("\n").filter((l) => !l.startsWith("#"));
-        const mtlName = lines[0];
-		for (const line of lines) {
+        const mtlName = lines[0].trim();
+		for (let line of lines) {
 			if (line.startsWith("map_Kd")) {
-                const mtlPath = line.split(" ")[1];
+                const mtlPath = line.split(" ")[1].replace("\r", "");
                 mtlMap[mtlName] = mtlPath;
 			}
 		}
