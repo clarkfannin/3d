@@ -2,36 +2,36 @@ import { config } from "../config.js";
 
 export function handlePlayerActions(state, dt) {
     const { camera } = state;
-    const moveSpeed = config.moveSpeed;
-    const turnSpeed = config.turnSpeed;
+    const moveSpeed = config.moveSpeed * dt;
+    const turnSpeed = config.turnSpeed * dt;
 
     const sinY = Math.sin(camera.yaw);
     const cosY = Math.cos(camera.yaw);
 
     if (state.keys.has(config.keyBindings.forward)) {
-        camera.x -= sinY * moveSpeed
-        camera.z += cosY * moveSpeed;
+        camera.x -= sinY * moveSpeed * dt
+        camera.z += cosY * moveSpeed * dt;
     }
     
     if (state.keys.has(config.keyBindings.backward)) {
-        camera.x += sinY * moveSpeed;
-        camera.z -= cosY * moveSpeed;
+        camera.x += sinY * moveSpeed * dt;
+        camera.z -= cosY * moveSpeed * dt;
     }
 
     if (state.keys.has(config.keyBindings.left)) {
-        camera.yaw += turnSpeed;
+        camera.yaw += turnSpeed * dt;
     }
     
     if (state.keys.has(config.keyBindings.right)) {
-        camera.yaw -= turnSpeed;
+        camera.yaw -= turnSpeed * dt;
     }
 
     if (state.keys.has(config.keyBindings.up)) {
-        camera.y -= moveSpeed;
+        camera.y += moveSpeed * dt;
     }
 
     if (state.keys.has(config.keyBindings.down)) {
-        camera.y += moveSpeed;
+        if (camera.y > 0) camera.y -= moveSpeed * dt;
     }
 }
 

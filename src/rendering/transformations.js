@@ -32,17 +32,26 @@ export function rotateYZ(p, angle) {
     };
 }
 
-export function modelToWorld(p, model) {
-    let result = scale(p, model.scale);
-    rotateYZ(result, model.pitch);
-    result = rotateXZ(result, model.yaw);
-    // offset result based on the model's displacement vector from origin
-    return translate(result, { dx: model.x, dy: model.y, dz: model.z });
+export function modelToWorld(p, model, mesh) {
+    function applyTransform(p, target) {
+        let result = p;
+        const t = target.pivot;
+        if (t) result = translate(p, {dx: -t.x, dy: -t.y, dz: -t.z});
+        result = scale(result, target.scale);
+        result = rotateYZ(result, target.pitch);
+        result = rotateXZ(result, target.yaw);
+        if (t) result = translate(result, {dx: t.x, dy: t.y, dz: t.z});
+        // offset result based on the model's displacement vector from origin
+        return translate(result, { dx: target.x, dy: target.y, dz: target.z });
+    }
+
+    if (mesh) p = applyTransform(p, mesh);
+    return applyTransform(p, model)
 }
 
-export function worldToCamera(world, camera, model) {
+export function worldToCamera(p, camera, model) {
     // inverse of the camera
-    let result = translate(world, { dx: -camera.x, dy: -camera.y, dz: -camera.z });
+    let result = translate(p, { dx: -camera.x, dy: -camera.y, dz: -camera.z });
     result = rotateXZ(result, -camera.yaw);
     result = rotateYZ(result, -camera.pitch);
     return result;
@@ -65,16 +74,10 @@ export function ndcToScreen(p, halfWidth, halfHeight, scale) {
 }
 
 export function vertexPipeline(point, model, mesh, camera, viewport) {
-    const world = modelToWorld(point, model);
+    const world = modelToWorld(point, model, mesh);
     const view = worldToCamera(world, camera, model);
     if (view.z <= config.near) return null;
     const clip = cameraToClip(view);
     const ndc = clipToNdc(clip);
     return ndcToScreen(ndc, viewport.halfWidth, viewport.halfHeight, viewport.scale);
-}
-
-export function getMeshDepth(point, model, mesh, camera) {
-    const world = modelToWorld(point, model);
-    const view = worldToCamera(world, camera, model);
-    return 
 }

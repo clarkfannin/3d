@@ -1,7 +1,7 @@
 export default async function getTextureImageData(model, mesh) {
-    const img = new Image();
     if (!model.mtlMap[mesh.texture]) return;
-    img.src = `models/${model.mtlMap[mesh.texture]}`
+    const img = new Image();
+    img.src = `models/${model.mtlMap[mesh.texture]}`;
     await img.decode();
     const shadowCanvas = document.createElement("canvas");
     const shadowCtx = shadowCanvas.getContext("2d");

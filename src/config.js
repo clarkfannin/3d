@@ -1,10 +1,9 @@
 export const config = {
     width: 320,
     height: 240,
-    dt: 1,
-    near: .000000001,
-    moveSpeed: 0.005,
-    turnSpeed: 0.05,
+    near: .001,
+    moveSpeed: 2,
+    turnSpeed: 5,
     keyBindings: {
         forward: "w",
         backward: "s",

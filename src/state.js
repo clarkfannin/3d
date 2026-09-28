@@ -1,6 +1,7 @@
 import getTextureImageData from "./canvas/load-texture.js";
 
 export const state = {
+    time: 0,
     sceneImageData: null,
     keys: new Set(),
     models: [
@@ -8,7 +9,7 @@ export const state = {
             path: "models/forest.obj",
             materialPath: "models/forest.mtl",
             x: 0,
-            y: 0,
+            y: .45,
             z: 0,
             yaw: 0,
             pitch: 0,
