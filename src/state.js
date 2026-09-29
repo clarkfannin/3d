@@ -1,5 +1,3 @@
-import getTextureImageData from "./canvas/load-texture.js";
-
 export const state = {
     zBuffer: Array.from({ length: 240 }, () => Array(320).fill(null)),
     time: 0,
