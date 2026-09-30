@@ -2,6 +2,24 @@ import { state } from "../state.js";
 import { frac } from "../math/math.js";
 import { placePixel, convertPixel } from "../canvas/drawing.js";
 import { pointInTriangle, interpolate, edge } from "./rasterizer.js";
+import { convertModelToCameraSpace } from "./transformations.js";
+
+export function getFaceCameraPoints(model, mesh, face) {
+    const cameraPoints = [];
+
+    // transform points in face to camera space
+    for (const f of face) {
+        // v = vertices index from obj
+        if (isNaN(f.v)) continue;
+        const point = model.points[f.v - 1];
+        point.u = model.uvs[f.vt - 1]?.u;
+        point.v = model.uvs[f.vt - 1]?.v;
+        const cameraPoint = convertModelToCameraSpace(point, model, mesh, state.camera);
+        cameraPoints.push(cameraPoint);
+    }
+
+    return cameraPoints;
+}
 
 export function renderPixels(mesh, boundingBox, canvasPoints) {
     for (let x = boundingBox.xMin; x < boundingBox.xMax; x++) {

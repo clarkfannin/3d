@@ -1,5 +1,6 @@
 import { state } from "../state.js";
 import { config } from "../config.js";
+import { events } from "../events/event-manager.js";
 
 export function convertPixel(imageData, width, x, y) {
     if (!imageData) return;
@@ -16,8 +17,14 @@ export function placePixel(x, y, [r, g, b, a]) {
     // index in the global pixel buffer, [r, g, b, a, r, g, b, a...]
     if (!a) return;
     const index = (y * config.width + x) * 4;
-    state.sceneImageData.data[index] = r + 25;
-    state.sceneImageData.data[index + 1] = g;
-    state.sceneImageData.data[index + 2] = b;
-    state.sceneImageData.data[index + 3] = a;
+    state.sceneImageData.data[index] = r + state.tint.r;
+    state.sceneImageData.data[index + 1] = g + state.tint.g;
+    state.sceneImageData.data[index + 2] = b + state.tint.b;
+    state.sceneImageData.data[index + 3] = a + state.tint.a;
 }
+
+export function tintScreen() {
+    state.tint.r += 40;
+}
+
+events.subscribe(tintScreen, "threshold")

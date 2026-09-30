@@ -1,37 +1,20 @@
 import { config } from "./config.js";
 import { state } from "./state.js";
-import { convertCameraToScreenSpace, convertModelToCameraSpace, clipNear } from "./rendering/transformations.js";
+import { events } from "./events/event-manager.js";
+import { convertCameraToScreenSpace, clipNear } from "./rendering/transformations.js";
 import cull from "./rendering/culling.js";
 import getBoundingBox from "./rendering/bounding-box.js";
 import setupInput, { handlePlayerActions } from "./input/input.js";
 import parseMtl from "./parsers/mtl.js";
 import getTextureImageData, { loadBgImage } from "./canvas/load-texture.js";
 import { openDB, getCachedModel } from "./indexed-db/indexed-db.js";
-import { renderPixels } from "./rendering/render.js";
+import { renderPixels, getFaceCameraPoints } from "./rendering/render.js";
 
 const canvas = document.getElementById("canvas");
 const ctx = canvas.getContext("2d", { willReadFrequently: true });
 
-export function getFaceCameraPoints(model, mesh, face) {
-    const cameraPoints = [];
-
-    // transform points in face to camera space
-    for (const f of face) {
-        // v = vertices index from obj
-        if (isNaN(f.v)) continue;
-        const point = model.points[f.v - 1];
-        point.u = model.uvs[f.vt - 1]?.u;
-        point.v = model.uvs[f.vt - 1]?.v;
-        const cameraPoint = convertModelToCameraSpace(point, model, mesh, state.camera);
-        cameraPoints.push(cameraPoint);
-    }
-
-    return cameraPoints;
-}
-
 export function drawFaces(model, mesh) {
     for (const face of mesh.faces) {
-
         const cameraPoints = getFaceCameraPoints(model, mesh, face);
         // near plane clipping
         const clipped = clipNear(cameraPoints, config.near);
@@ -61,6 +44,8 @@ const frame = (now) => {
     const dt = (now - last) / 1000;
     last = now;
     state.time += dt;
+    events.processQueue();
+    checkCameraPosition();
     handlePlayerActions(state, dt);
     ((state.zBuffer = Array.from({ length: 240 }, () => Array(320).fill(null))), state.sceneImageData.data.set(state.bgImageData.imageData.data));
     for (const model of state.models) {
@@ -74,6 +59,10 @@ const frame = (now) => {
     ctx.putImageData(state.sceneImageData, 0, 0);
     requestAnimationFrame(frame);
 };
+
+export function checkCameraPosition() {
+    if (state.camera.z > 0.2) events.dispatch(new Event("threshold"), { once: true });
+}
 
 const setup = async () => {
     canvas.width = config.width;
@@ -94,9 +83,7 @@ const setup = async () => {
         const modelText = await modelRes.text();
         const mtlText = await mtlRes.text();
         const modelObject = await getCachedModel(db, model.path, modelText);
-        console.log(modelObject);
         Object.assign(model, modelObject);
-        console.log(model);
         model.mtlMap = parseMtl(mtlText);
         for (const mesh of model.meshes) {
             mesh.startX = mesh.x;

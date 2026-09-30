@@ -3,6 +3,7 @@ export const state = {
     time: 0,
     sceneImageData: null,
     bgImageData: null,
+    tint: {r: 0, g: 0, b: 0, a: 0},
     keys: new Set(),
     models: [
         {

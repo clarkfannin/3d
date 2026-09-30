@@ -8,6 +8,6 @@ export default class EventQueue {
     }
 
     dequeue() {
-        return this.queue.pop();
+        return this.queue.shift();
     }
 }

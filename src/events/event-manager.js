@@ -1,25 +1,38 @@
-export default class EventManager {
+import EventQueue from "./event-queue.js";
 
-    static listeners = {};
+class EventManager {
+    listeners = {};
+    queue = new EventQueue();
+    fired = new Set();
 
-    static dispatch(queue, event) {
-        queue.enqueue(event);
+    dispatch(event, { once = true } = {}) {
+        if (once && this.fired.has(event.type)) return;
+        if (once) this.fired.add(event.type);
+        this.queue.enqueue(event);
     }
 
-    static processQueue(queue) {
-        for (const event of queue.queue) {
-            const listener = this.listeners[event.type]
+    processQueue() {
+        while (this.queue.queue.length) {
+            const event = this.queue.dequeue();
+            const listener = this.listeners[event.type];
+            if (!listener) continue;
             for (const fn of listener.fns) {
                 try {
                     fn(event);
-                } catch(error) {
-                    console.error(`Error executing "${event.type}" event: ${error}`);
+                    console.log(`"${event.type}" event executed`);
+                } catch (error) {
+                    console.error(`Error executing "${event.type}" event:`, error);
                 }
             }
         }
     }
 
-    static subscribe(fn, eventType) {
+    subscribe(fn, eventType) {
+        if (!this.listeners[eventType]) {
+            this.listeners[eventType] = { fns: [] };
+        }
         this.listeners[eventType].fns.push(fn);
     }
 }
+
+export const events = new EventManager();
