@@ -1,3 +1,4 @@
+import {config} from "../config.js"
 import { state } from "../state.js";
 import { frac } from "../math/math.js";
 import { placePixel, convertPixel } from "../canvas/drawing.js";
@@ -21,7 +22,7 @@ export function getFaceCameraPoints(model, mesh, face) {
     return cameraPoints;
 }
 
-export function renderPixels(mesh, boundingBox, canvasPoints) {
+export function renderPixels(mesh, boundingBox, canvasPoints, offset) {
     for (let x = boundingBox.xMin; x < boundingBox.xMax; x++) {
         for (let y = boundingBox.yMin; y < boundingBox.yMax; y++) {
             const p = { x, y };
@@ -40,8 +41,11 @@ export function renderPixels(mesh, boundingBox, canvasPoints) {
             const tX = Math.floor(frac(u) * (mesh.textureImageData?.width - 1));
             const tY = Math.floor((1 - frac(v)) * (mesh.textureImageData?.height - 1));
 
-            const color = convertPixel(mesh.textureImageData?.imageData, mesh.textureImageData?.width, tX, tY);
-
+            let color = convertPixel(mesh.textureImageData?.imageData, mesh.textureImageData?.width, tX, tY);
+            // super basic distance-based shading
+            color = color.map((c) => {
+                return c > 0 ? c - depth * 20 : c;
+            })
             if (
                 (!state.zBuffer[y][x] || isNaN(state.zBuffer[y][x]) || depth < state.zBuffer[y][x]) &&
                 // skip storing transparent pixels in the zBuffer

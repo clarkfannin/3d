@@ -103,6 +103,8 @@ export default function parseObj(text) {
         }
         // average them to get the center
         mesh.pivot = { x: (min.x + max.x) / 2, y: (min.y + max.y) / 2, z: (min.z + max.z) / 2 };
+
+        // get radius
     }
 
     return { points, uvs, meshes };

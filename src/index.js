@@ -33,8 +33,10 @@ export function drawFaces(model, mesh) {
             // get bounding box to iterate over and check if pixel is in triangle
             const boundingBox = getBoundingBox(tri);
 
+            // get dark offset for distance
+            const offset = canvasPoints[i].z
             // render pixels
-            renderPixels(mesh, boundingBox, tri);
+            renderPixels(mesh, boundingBox, tri, offset);
         }
     }
 }
@@ -45,7 +47,6 @@ const frame = (now) => {
     last = now;
     state.time += dt;
     events.processQueue();
-    checkCameraPosition();
     handlePlayerActions(state, dt);
     ((state.zBuffer = Array.from({ length: 240 }, () => Array(320).fill(null))), state.sceneImageData.data.set(state.bgImageData.imageData.data));
     for (const model of state.models) {
@@ -62,6 +63,10 @@ const frame = (now) => {
 
 export function checkCameraPosition() {
     if (state.camera.z > 0.2) events.dispatch(new Event("threshold"), { once: true });
+}
+
+export function checkTime() {
+    if (state.time > 4) events.dispatch(new Event("time"), { once: true });
 }
 
 const setup = async () => {

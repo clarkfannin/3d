@@ -11,10 +11,6 @@ export function dist (v0, v1) {
     return Math.sqrt((v1.x - v0.x) ** 2  + (v1.y - v0.y) ** 2);
 };
 
-export function area (s, edge0, edge1, edge2) {
-    return Math.sqrt(s * (s - edge0) * (s - edge1) * (s - edge2));
-};
-
 export function interpolate ({ w0, w1, w2 }, a0, a1, a2) {
     return w0 * a0 + w1 * a1 + w2 * a2;
 };

@@ -9,29 +9,29 @@ export function handlePlayerActions(state, dt) {
     const cosY = Math.cos(camera.yaw);
 
     if (state.keys.has(config.keyBindings.forward)) {
-        camera.x -= sinY * moveSpeed * dt
-        camera.z += cosY * moveSpeed * dt;
+        camera.x -= sinY * moveSpeed
+        camera.z += cosY * moveSpeed;
     }
     
     if (state.keys.has(config.keyBindings.backward)) {
-        camera.x += sinY * moveSpeed * dt;
-        camera.z -= cosY * moveSpeed * dt;
+        camera.x += sinY * moveSpeed;
+        camera.z -= cosY * moveSpeed;
     }
 
     if (state.keys.has(config.keyBindings.left)) {
-        camera.yaw += turnSpeed * dt;
+        camera.yaw += turnSpeed;
     }
     
     if (state.keys.has(config.keyBindings.right)) {
-        camera.yaw -= turnSpeed * dt;
+        camera.yaw -= turnSpeed;
     }
 
     if (state.keys.has(config.keyBindings.up)) {
-        camera.y += moveSpeed * dt;
+        camera.y += moveSpeed;
     }
 
     if (state.keys.has(config.keyBindings.down)) {
-        /*if (camera.y > 0)*/ camera.y -= moveSpeed * dt;
+        /*if (camera.y > 0)*/ camera.y -= moveSpeed;
     }
 }
 

@@ -1,0 +1,7 @@
+TODO:
+
+- Split config out into config and "scene". each scene has different shaders, darkness factor, sounds, etc
+- Collision - boolean flag on meshes. Use camera position. Also figure out ground collision
+- sounds
+- Teleporting (use events)
+- 
