@@ -1,6 +1,6 @@
-import { state } from "../state.js";
 import { config } from "../config.js";
 import { events } from "../events/event-manager.js";
+import { frameBuffer } from "../rendering/frame-buffer.js";
 
 export function convertPixel(imageData, width, x, y) {
     if (!imageData) return;
@@ -16,11 +16,12 @@ export function convertPixel(imageData, width, x, y) {
 export function placePixel(x, y, [r, g, b, a]) {
     // index in the global pixel buffer, [r, g, b, a, r, g, b, a...]
     if (!a) return;
+    const data = frameBuffer.imageData.data;
     const index = (y * config.width + x) * 4;
-    state.sceneImageData.data[index] = r + state.tint.r + 20;
-    state.sceneImageData.data[index + 1] = g + state.tint.g;
-    state.sceneImageData.data[index + 2] = b + state.tint.b;
-    state.sceneImageData.data[index + 3] = a + state.tint.a;
+    data[index] = r + state.tint.r + 20;
+    data[index + 1] = g + state.tint.g;
+    data[index + 2] = b + state.tint.b;
+    data[index + 3] = a + state.tint.a;
 }
 
 export function tintRed() {

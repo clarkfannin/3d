@@ -1,9 +1,9 @@
-import {config} from "../config.js"
 import { state } from "../state.js";
 import { frac } from "../math/math.js";
 import { placePixel, convertPixel } from "../canvas/drawing.js";
 import { pointInTriangle, interpolate, edge } from "./rasterizer.js";
 import { convertModelToCameraSpace } from "./transformations.js";
+import { frameBuffer } from "./frame-buffer.js";
 
 export function getFaceCameraPoints(model, mesh, face) {
     const cameraPoints = [];
@@ -47,12 +47,12 @@ export function renderPixels(mesh, boundingBox, canvasPoints, offset) {
                 return c > 0 ? c - depth * 20 : c;
             })
             if (
-                (!state.zBuffer[y][x] || isNaN(state.zBuffer[y][x]) || depth < state.zBuffer[y][x]) &&
-                // skip storing transparent pixels in the zBuffer
+                (!frameBuffer.zBuf[y][x] || isNaN(frameBuffer.zBuf[y][x]) || depth < frameBuffer.zBuf[y][x]) &&
+                // skip storing transparent pixels in the zBuf
                 color[3] !== 0
             ) {
-                // if the current pixel about to be rendered is closer than another one at the same coord, update the zbuffer
-                state.zBuffer[y][x] = depth;
+                // if the current pixel about to be rendered is closer than another one at the same coord, update the zBuf
+                frameBuffer.zBuf[y][x] = depth;
             } else continue; // skip if it's further
 
             // pixel: the current x and y being iterated

@@ -1,6 +1,7 @@
 import { config } from "./config.js";
 import { state } from "./state.js";
 import { events } from "./events/event-manager.js";
+import { frameBuffer } from "./rendering/frame-buffer.js";
 import { convertCameraToScreenSpace, clipNear } from "./rendering/transformations.js";
 import cull from "./rendering/culling.js";
 import getBoundingBox from "./rendering/bounding-box.js";
@@ -14,90 +15,85 @@ const canvas = document.getElementById("canvas");
 const ctx = canvas.getContext("2d", { willReadFrequently: true });
 
 export function drawFaces(model, mesh) {
-    for (const face of mesh.faces) {
-        const cameraPoints = getFaceCameraPoints(model, mesh, face);
-        // near plane clipping
-        const clipped = clipNear(cameraPoints, config.near);
-        if (clipped.length < 3) continue;
+	for (const face of mesh.faces) {
+		const cameraPoints = getFaceCameraPoints(model, mesh, face);
+		// near plane clipping
+		const clipped = clipNear(cameraPoints, config.near);
+		if (clipped.length < 3) continue;
 
-        const canvasPoints = clipped.map((p) => convertCameraToScreenSpace(p, canvas));
+		const canvasPoints = clipped.map((p) => convertCameraToScreenSpace(p, canvas));
 
-        // walk through canvasPoints to construct triangles
-        // use 0 as the 'pivot' vertex
-        for (let i = 1; i < canvasPoints.length - 1; i++) {
-            const tri = [canvasPoints[0], canvasPoints[i], canvasPoints[i + 1]];
+		// walk through canvasPoints to construct triangles
+		// use 0 as the 'pivot' vertex
+		for (let i = 1; i < canvasPoints.length - 1; i++) {
+			const tri = [canvasPoints[0], canvasPoints[i], canvasPoints[i + 1]];
 
-            // backface culling
-            if (cull(tri)) continue;
+			// backface culling
+			if (cull(tri)) continue;
 
-            // get bounding box to iterate over and check if pixel is in triangle
-            const boundingBox = getBoundingBox(tri);
+			// get bounding box to iterate over and check if pixel is in triangle
+			const boundingBox = getBoundingBox(tri);
 
-            // get dark offset for distance
-            const offset = canvasPoints[i].z
-            // render pixels
-            renderPixels(mesh, boundingBox, tri, offset);
-        }
-    }
+			// get dark offset for distance
+			const offset = canvasPoints[i].z;
+			// render pixels
+			renderPixels(mesh, boundingBox, tri, offset);
+		}
+	}
 }
 
 let last = performance.now();
 const frame = (now) => {
-    const dt = (now - last) / 1000;
-    last = now;
-    state.time += dt;
-    events.processQueue();
-    handlePlayerActions(state, dt);
-    ((state.zBuffer = Array.from({ length: 240 }, () => Array(320).fill(null))), state.sceneImageData.data.set(state.bgImageData.imageData.data));
-    for (const model of state.models) {
-        for (const mesh of model.meshes) {
-            if (mesh.texture === "Green_Elka" || mesh.texture === "Green_sosna.001") {
-                mesh.x = mesh.startX + Math.sin(state.time * mesh.branchOffset) / 200;
-            }
-            drawFaces(model, mesh);
-        }
-    }
-    ctx.putImageData(state.sceneImageData, 0, 0);
-    requestAnimationFrame(frame);
+	const dt = (now - last) / 1000;
+	last = now;
+	state.time += dt;
+	events.processQueue();
+	handlePlayerActions(state, dt);
+	frameBuffer.clear();
+	for (const model of state.models) {
+		for (const mesh of model.meshes) {
+			if (mesh.texture === "Green_Elka" || mesh.texture === "Green_sosna.001") {
+				mesh.x = mesh.startX + Math.sin(state.time * mesh.branchOffset) / 200;
+			}
+			drawFaces(model, mesh);
+		}
+	}
+	ctx.putImageData(frameBuffer.imageData, 0, 0);
+	requestAnimationFrame(frame);
 };
 
 export function checkCameraPosition() {
-    if (state.camera.z > 0.2) events.dispatch(new Event("threshold"), { once: true });
+	if (state.camera.z > 0.2) events.dispatch(new Event("threshold"), { once: true });
 }
 
 export function checkTime() {
-    if (state.time > 4) events.dispatch(new Event("time"), { once: true });
+	if (state.time > 4) events.dispatch(new Event("time"), { once: true });
 }
 
 const setup = async () => {
-    canvas.width = config.width;
-    canvas.height = config.height;
-    canvas.style.backgroundColor = config.colors.background;
+	canvas.width = config.width;
+	canvas.height = config.height;
+	canvas.halfWidth = canvas.width / 2;
+	canvas.halfHeight = canvas.height / 2;
+	canvas.scale = canvas.halfHeight;
+	frameBuffer.bgImageData = await loadBgImage(config.bgImage);
+	frameBuffer.imageData = ctx.getImageData(0, 0, config.width, config.height);
+	for (let model of state.models) {
+		const modelRes = await fetch(model.path);
+		const mtlRes = await fetch(model.materialPath);
+		const modelText = await modelRes.text();
+		const mtlText = await mtlRes.text();
+		const modelObject = await getCachedModel(db, model.path, modelText);
+		Object.assign(model, modelObject);
+		model.mtlMap = parseMtl(mtlText);
+		for (const mesh of model.meshes) {
+			mesh.startX = mesh.x;
+			mesh.branchOffset = Math.random();
+			mesh.textureImageData = await getTextureImageData(model, mesh);
+		}
+	}
 
-    ctx.fillStyle = config.colors.points;
-
-    canvas.halfWidth = canvas.width / 2;
-    canvas.halfHeight = canvas.height / 2;
-    canvas.scale = canvas.halfHeight;
-    state.bgImageData = await loadBgImage(config.bgImage);
-    state.sceneImageData = ctx.getImageData(0, 0, config.width, config.height);
-
-    for (let model of state.models) {
-        const modelRes = await fetch(model.path);
-        const mtlRes = await fetch(model.materialPath);
-        const modelText = await modelRes.text();
-        const mtlText = await mtlRes.text();
-        const modelObject = await getCachedModel(db, model.path, modelText);
-        Object.assign(model, modelObject);
-        model.mtlMap = parseMtl(mtlText);
-        for (const mesh of model.meshes) {
-            mesh.startX = mesh.x;
-            mesh.branchOffset = Math.random();
-            mesh.textureImageData = await getTextureImageData(model, mesh);
-        }
-    }
-
-    setupInput(state);
+	setupInput(state);
 };
 
 const db = await openDB();
@@ -105,5 +101,5 @@ await setup();
 requestAnimationFrame(frame);
 
 window.gs = () => {
-    console.log(state);
+	console.log(state);
 };
